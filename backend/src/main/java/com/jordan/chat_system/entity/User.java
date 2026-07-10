@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "Users")
@@ -33,5 +34,6 @@ public class User {
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
 }
 
