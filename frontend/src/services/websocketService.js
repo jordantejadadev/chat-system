@@ -1,13 +1,16 @@
 import { Client } from "@stomp/stompjs";
-import SockJS from "sockjs-client";
 
 let stompClient = null;
 
-export function connect(onMessageReceived) {
+export function connect(token, onMessageReceived) {            
 
     stompClient = new Client({
 
-        webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+        brokerURL: "ws://localhost:8080/ws",
+
+        connectHeaders: {
+            Authorization: `Bearer ${token}`
+        },
 
         reconnectDelay: 5000,
 
@@ -17,10 +20,25 @@ export function connect(onMessageReceived) {
             stompClient.subscribe(
                 "/user/queue/messages",
                 (message) => {
+                    console.log("RECIBIDO: ", message);
+                    
                     const body = JSON.parse(message.body);
                     onMessageReceived(body);                    
                 }
             )
+        },       
+
+        onStompError: (frame) => {
+            console.error("STOMP Error:", frame);            
+        },
+
+        onWebSocketClose: (event) => {
+            console.log("WebSocket cerrado", event);            
+        },
+
+        onWebSocketError: (event) => {
+            console.error("WebSocket error", event);
+            
         }
     });
 
@@ -31,4 +49,20 @@ export function disconnect() {
     if (stompClient) {
         stompClient.deactivate();
     }
+}
+
+export function sendMessage(receiverId, content, senderEmail) {
+
+    if(!stompClient.connected) {
+        console.log("Aún no conectado");
+        return;        
+    }
+
+    stompClient.publish({
+        destination: "/app/chat",
+        body: JSON.stringify({
+            receiverId,
+            content            
+        })
+    });
 }

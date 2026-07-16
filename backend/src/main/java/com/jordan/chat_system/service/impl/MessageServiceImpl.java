@@ -47,8 +47,8 @@ public class MessageServiceImpl implements MessageService {
 
         return new MessageResponse(
                 saved.getId(),
-                saved.getSender().getUsername(),
-                saved.getReceiver().getUsername(),
+                saved.getSender().getEmail(),
+                saved.getReceiver().getEmail(),
                 saved.getContent(),
                 saved.getSentAt()
         );
@@ -64,8 +64,8 @@ public class MessageServiceImpl implements MessageService {
         return messages.stream()
                 .map(message -> new MessageResponse(
                         message.getId(),
-                        message.getSender().getUsername(),
-                        message.getReceiver().getUsername(),
+                        message.getSender().getEmail(),
+                        message.getReceiver().getEmail(),
                         message.getContent(),
                         message.getSentAt()
                 )).toList();

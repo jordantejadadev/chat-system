@@ -12,13 +12,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@RequestMapping("/messages")
 @RequiredArgsConstructor
 public class MessageController {
 
     private final MessageService messageService;
     private final UserService userService;
 
-    @PostMapping("/messages")
+    @PostMapping
     public MessageResponse sendMessage(
             Authentication authentication,
             @RequestBody SendMessageRequest request

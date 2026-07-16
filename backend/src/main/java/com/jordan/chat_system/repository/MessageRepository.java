@@ -17,7 +17,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     WHERE
         (m.sender.id = :senderId AND m.receiver.id = :receiverId)
         OR
-        (m.sender.id = : receiverId AND m.receiver.id = : senderId)
+        (m.sender.id = :receiverId AND m.receiver.id = :senderId)
     ORDER BY m.sentAt ASC
 """)
     List<Message> findConversation(
