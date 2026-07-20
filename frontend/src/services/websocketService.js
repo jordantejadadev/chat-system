@@ -51,7 +51,7 @@ export function disconnect() {
     }
 }
 
-export function sendMessage(receiverId, content, senderEmail) {
+export function sendMessage(receiverId, content) {
 
     if(!stompClient.connected) {
         console.log("Aún no conectado");
