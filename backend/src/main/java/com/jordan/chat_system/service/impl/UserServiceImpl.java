@@ -4,6 +4,7 @@ import com.jordan.chat_system.dto.UserResponse;
 import com.jordan.chat_system.entity.User;
 import com.jordan.chat_system.exception.ResourceNotFoundException;
 import com.jordan.chat_system.repository.UserRepository;
+import com.jordan.chat_system.service.OnlineUserService;
 import com.jordan.chat_system.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final OnlineUserService onlineUserService;
 
     @Override
     public User getCurrentUser(String email) {
@@ -31,7 +33,8 @@ public class UserServiceImpl implements UserService {
                         u.getId(),
                         u.getUsername(),
                         u.getEmail(),
-                        u.getRole().name()
+                        u.getRole().name(),
+                        onlineUserService.isOnline(u.getEmail())
                 ))
                 .toList();
     }

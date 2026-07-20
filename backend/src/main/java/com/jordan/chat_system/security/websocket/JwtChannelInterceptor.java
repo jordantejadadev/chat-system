@@ -1,6 +1,7 @@
 package com.jordan.chat_system.security.websocket;
 
 import com.jordan.chat_system.service.JwtService;
+import com.jordan.chat_system.service.OnlineUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -20,6 +21,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final OnlineUserService onlineUsersService;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -39,6 +41,8 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                             new UsernamePasswordAuthenticationToken(
                                     userDetails, null, userDetails.getAuthorities());
                     accessor.setUser(authentication);
+
+                    onlineUsersService.connect(userDetails.getUsername());
                 }
             }
         }

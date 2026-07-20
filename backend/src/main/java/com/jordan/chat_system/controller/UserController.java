@@ -2,6 +2,7 @@ package com.jordan.chat_system.controller;
 
 import com.jordan.chat_system.dto.UserResponse;
 import com.jordan.chat_system.entity.User;
+import com.jordan.chat_system.service.OnlineUserService;
 import com.jordan.chat_system.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -17,6 +18,7 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final OnlineUserService onlineUserService;
 
     @GetMapping("/me")
     public UserResponse me(Authentication authentication) {
@@ -29,7 +31,8 @@ public class UserController {
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
-                user.getRole().name()
+                user.getRole().name(),
+                onlineUserService.isOnline(user.getEmail())
         );
     }
 

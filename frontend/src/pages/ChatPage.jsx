@@ -82,7 +82,7 @@ const ChatPage = () => {
               padding: "4px 0",
             }}
           >
-            {u.username}
+            {u.online ? "🟢" : "⚪"} {u.username}
           </div>
         ))}
       </aside>
