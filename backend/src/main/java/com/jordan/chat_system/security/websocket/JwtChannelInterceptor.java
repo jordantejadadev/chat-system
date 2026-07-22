@@ -21,7 +21,6 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-    private final OnlineUserService onlineUsersService;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -42,7 +41,6 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                                     userDetails, null, userDetails.getAuthorities());
                     accessor.setUser(authentication);
 
-                    onlineUsersService.connect(userDetails.getUsername());
                 }
             }
         }

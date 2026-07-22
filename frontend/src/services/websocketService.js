@@ -2,67 +2,75 @@ import { Client } from "@stomp/stompjs";
 
 let stompClient = null;
 
-export function connect(token, onMessageReceived) {            
+export function connect(
+  token,
+  onMessageReceived,
+  onOnlineUsersChanged,
+  onStatusUpdated,
+) {
+  stompClient = new Client({
+    brokerURL: "ws://localhost:8080/ws",
 
-    stompClient = new Client({
+    connectHeaders: {
+      Authorization: `Bearer ${token}`,
+    },
 
-        brokerURL: "ws://localhost:8080/ws",
+    reconnectDelay: 5000,
 
-        connectHeaders: {
-            Authorization: `Bearer ${token}`
-        },
+    onConnect: () => {
+      console.log("Conectado al WebSocket");
 
-        reconnectDelay: 5000,
+      stompClient.subscribe("/user/queue/messages", (message) => {        
 
-        onConnect: () => {
-            console.log("Conectado al WebSocket");
+        const body = JSON.parse(message.body);
+        onMessageReceived(body);
+      });
 
-            stompClient.subscribe(
-                "/user/queue/messages",
-                (message) => {
-                    console.log("RECIBIDO: ", message);
-                    
-                    const body = JSON.parse(message.body);
-                    onMessageReceived(body);                    
-                }
-            )
-        },       
+      stompClient.subscribe("/topic/online-users", (message) => {
+        const onlineUsers = JSON.parse(message.body);
+        onOnlineUsersChanged(onlineUsers);
+      });
 
-        onStompError: (frame) => {
-            console.error("STOMP Error:", frame);            
-        },
+      stompClient.subscribe("/user/queue/message-status", (message) => {
+        const body = JSON.parse(message.body);
+        console.log(body);        
+        onStatusUpdated(body);
+      });
+    },
 
-        onWebSocketClose: (event) => {
-            console.log("WebSocket cerrado", event);            
-        },
+    onStompError: (frame) => {
+      console.error("STOMP Error:", frame);
+    },
 
-        onWebSocketError: (event) => {
-            console.error("WebSocket error", event);
-            
-        }
-    });
+    onWebSocketClose: (event) => {
+      console.log("WebSocket cerrado", event);
+    },
 
-    stompClient.activate();
+    onWebSocketError: (event) => {
+      console.error("WebSocket error", event);
+    },
+  });
+
+  stompClient.activate();
 }
 
 export function disconnect() {
-    if (stompClient) {
-        stompClient.deactivate();
-    }
+  if (stompClient) {
+    stompClient.deactivate();
+  }
 }
 
 export function sendMessage(receiverId, content) {
+  if (!stompClient.connected) {
+    console.log("Aún no conectado");
+    return;
+  }
 
-    if(!stompClient.connected) {
-        console.log("Aún no conectado");
-        return;        
-    }
-
-    stompClient.publish({
-        destination: "/app/chat",
-        body: JSON.stringify({
-            receiverId,
-            content            
-        })
-    });
+  stompClient.publish({
+    destination: "/app/chat",
+    body: JSON.stringify({
+      receiverId,
+      content,
+    }),
+  });
 }

@@ -34,4 +34,8 @@ public class Message {
     @Column(nullable = false)
     private LocalDateTime sentAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MessageStatus status;
+
 }

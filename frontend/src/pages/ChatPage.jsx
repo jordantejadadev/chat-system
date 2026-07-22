@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { getConversation } from "../services/messageService";
+import { getConversation, markAsRead } from "../services/messageService";
 import { getAllUsers } from "../services/userService";
 import { connect, disconnect, sendMessage } from "../services/websocketService";
 
@@ -10,6 +10,7 @@ const ChatPage = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [content, setContent] = useState("");
+  const [onlineUsers, setOnlineUsers] = useState([]);
 
   // Ref para que el callback siempre vea el selectedUser actual
   const selectedUserRef = useRef(selectedUser);
@@ -42,20 +43,48 @@ const ChatPage = () => {
   useEffect(() => {
     if (!user) return;
 
-    connect(user.token, (newMessage) => {
-      const currentSelected = selectedUserRef.current;
+    connect(
+      user.token,
+      (newMessage) => {
+        const currentSelected = selectedUserRef.current;
 
-      setMessages((previousMessages) => {
         if (
           currentSelected &&
-          (newMessage.sender === currentSelected.email ||
-            newMessage.receiver === currentSelected.email)
+          (newMessage.senderId === currentSelected.id ||
+            newMessage.receiverId === currentSelected.id)
         ) {
-          return [...previousMessages, newMessage];
+          setMessages((previousMessages) => [...previousMessages, newMessage]);
+
+          if (newMessage.status === "DELIVERED") {
+            markAsRead(newMessage.senderId).catch((error) =>
+              console.error("Error marcando mensajes como leídos: ", error),
+            );
+          }
         }
-        return previousMessages;
-      });
-    });
+      },
+      (emails) => {
+        setUsers((previousUsers) =>
+          previousUsers.map((user) => ({
+            ...user,
+            online: emails.includes(user.email),
+          })),
+        );
+      },
+      (statusUpdate) => {
+        console.log("Status recibido: ", statusUpdate);
+
+        setMessages((previous) =>
+          previous.map((message) =>
+            message.id === statusUpdate.messageId
+              ? {
+                  ...message,
+                  status: statusUpdate.status,
+                }
+              : message,
+          ),
+        );
+      },
+    );
 
     return () => {
       disconnect();
@@ -67,6 +96,22 @@ const ChatPage = () => {
     sendMessage(selectedUser.id, content);
     setContent("");
   }
+
+  function getStatusIcon(status) {
+    switch (status) {
+      case "SENT":
+        return <span>✓</span>;
+      case "DELIVERED":
+        return <span>✓✓</span>;
+      case "READ":
+        return <span style={{ color: "blue" }}>✓✓</span>;
+      default:
+        return "";
+    }
+  }
+
+  console.log(user.id);
+  
 
   return (
     <div style={{ display: "flex" }}>
@@ -104,6 +149,9 @@ const ChatPage = () => {
                   <div key={message.id}>
                     <strong>{message.sender}</strong>
                     <p>{message.content}</p>
+                    {message.senderId === user.id && (
+                      <small>{getStatusIcon(message.status)}</small>
+                    )}
                   </div>
                 ))}
               </div>

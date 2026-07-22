@@ -25,6 +25,7 @@ public class AuthController {
         User user = authService.register(request);
 
         return new AuthResponse(
+                user.getId(),
                 null,
                 user.getUsername(),
                 user.getEmail(),
