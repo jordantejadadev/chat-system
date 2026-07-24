@@ -120,5 +120,14 @@ public class MessageServiceImpl implements MessageService {
         return messageRepository.saveAll(messages);
     }
 
-
+    @Override
+    public long countUnreadMessages(
+            Long senderId,
+            Long receiverId
+    ) {
+        return messageRepository.countUnreadMessages(
+                senderId,
+                receiverId
+        );
+    }
 }

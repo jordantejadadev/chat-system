@@ -7,6 +7,8 @@ export function connect(
   onMessageReceived,
   onOnlineUsersChanged,
   onStatusUpdated,
+  onTypingReceived,
+  onUnreadCountUpdated
 ) {
   stompClient = new Client({
     brokerURL: "ws://localhost:8080/ws",
@@ -20,8 +22,7 @@ export function connect(
     onConnect: () => {
       console.log("Conectado al WebSocket");
 
-      stompClient.subscribe("/user/queue/messages", (message) => {        
-
+      stompClient.subscribe("/user/queue/messages", (message) => {
         const body = JSON.parse(message.body);
         onMessageReceived(body);
       });
@@ -33,8 +34,19 @@ export function connect(
 
       stompClient.subscribe("/user/queue/message-status", (message) => {
         const body = JSON.parse(message.body);
-        console.log(body);        
         onStatusUpdated(body);
+      });
+
+      stompClient.subscribe("/user/queue/typing", (message) => {
+        const body = JSON.parse(message.body);
+        onTypingReceived(body);
+      });
+
+      stompClient.subscribe("/user/queue/unread-count", (message) => {
+        const body = JSON.parse(message.body);
+        console.log("UnreadCount: ", body);
+        
+        onUnreadCountUpdated(body);
       });
     },
 
@@ -71,6 +83,18 @@ export function sendMessage(receiverId, content) {
     body: JSON.stringify({
       receiverId,
       content,
+    }),
+  });
+}
+
+export function sendTyping(receiver, typing) {
+  if (!stompClient || !stompClient.connected) return;
+
+  stompClient.publish({
+    destination: "/app/chat/typing",
+    body: JSON.stringify({
+      receiver,
+      typing,
     }),
   });
 }

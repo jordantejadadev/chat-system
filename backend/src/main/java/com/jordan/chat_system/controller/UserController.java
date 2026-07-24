@@ -32,7 +32,8 @@ public class UserController {
                 user.getUsername(),
                 user.getEmail(),
                 user.getRole().name(),
-                onlineUserService.isOnline(user.getEmail())
+                onlineUserService.isOnline(user.getEmail()),
+                0L
         );
     }
 

@@ -18,4 +18,9 @@ public interface MessageService {
     List<Message> markMessagesAsDelivered(String receiverEmail);
 
     List<Message> markMessagesAsRead(Long senderId, Long receiverId);
+
+    long countUnreadMessages(
+            Long senderId,
+            Long receiverId
+    );
 }

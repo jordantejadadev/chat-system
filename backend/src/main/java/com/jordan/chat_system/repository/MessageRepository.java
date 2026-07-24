@@ -52,4 +52,19 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             @Param("receiverId") Long receiverId,
             @Param("status") MessageStatus status
     );
+
+    @Query("""
+    SELECT COUNT(m)
+    FROM Message m
+    WHERE
+        m.sender.id = :senderId
+    AND
+        m.receiver.id = :receiverId
+    AND
+        m.status <> 'READ'
+""")
+    long countUnreadMessages(
+            @Param("senderId") Long senderId,
+            @Param("receiverId") Long receiverId
+    );
 }

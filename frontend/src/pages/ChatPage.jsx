@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { getConversation, markAsRead } from "../services/messageService";
 import { getAllUsers } from "../services/userService";
-import { connect, disconnect, sendMessage } from "../services/websocketService";
+import {
+  connect,
+  disconnect,
+  sendMessage,
+  sendTyping,
+} from "../services/websocketService";
 
 const ChatPage = () => {
   const { user } = useAuth();
@@ -11,9 +16,11 @@ const ChatPage = () => {
   const [messages, setMessages] = useState([]);
   const [content, setContent] = useState("");
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [typingUser, setTypingUser] = useState(null);
 
   // Ref para que el callback siempre vea el selectedUser actual
   const selectedUserRef = useRef(selectedUser);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
     selectedUserRef.current = selectedUser;
@@ -23,6 +30,8 @@ const ChatPage = () => {
   useEffect(() => {
     async function loadUsers() {
       const allUsers = await getAllUsers();
+      console.log(allUsers);
+
       setUsers(allUsers);
     }
     loadUsers();
@@ -33,8 +42,13 @@ const ChatPage = () => {
     if (!selectedUser) return;
 
     async function loadConversation() {
-      const conversation = await getConversation(selectedUser.id);
-      setMessages(conversation);
+      try {
+        const conversation = await getConversation(selectedUser.id);
+        setMessages(conversation);
+        
+      } catch (error) {
+        console.error(error);
+      }
     }
     loadConversation();
   }, [selectedUser]);
@@ -84,6 +98,27 @@ const ChatPage = () => {
           ),
         );
       },
+      (typingNotification) => {
+        if (typingNotification.typing) {
+          setTypingUser(typingNotification.sender);
+        } else {
+          setTypingUser(null);
+        }
+      },
+      (unreadUpdate) => {
+        console.log("Unread actualizado:", unreadUpdate);
+        
+        setUsers((previousUsers) =>
+          previousUsers.map((user) =>
+            user.id === unreadUpdate.senderId
+              ? {
+                  ...user,
+                  unreadCount: unreadUpdate.unreadCount,
+                }
+              : user,
+          ),
+        );
+      },
     );
 
     return () => {
@@ -110,9 +145,6 @@ const ChatPage = () => {
     }
   }
 
-  console.log(user.id);
-  
-
   return (
     <div style={{ display: "flex" }}>
       <aside style={{ width: "200px", borderRight: "1px solid #ccc" }}>
@@ -128,6 +160,21 @@ const ChatPage = () => {
             }}
           >
             {u.online ? "🟢" : "⚪"} {u.username}
+            {u.unreadCount > 0 && (
+              <span
+                style={{
+                  marginLeft: "8px",
+                  backgroundColor: "red",
+                  color: "white",
+                  borderRadius: "50%",
+                  padding: "2px 8px",
+                  fontSize: "12px",
+                  fontWeight: "bold",
+                }}
+              >
+                {u.unreadCount}
+              </span>
+            )}
           </div>
         ))}
       </aside>
@@ -144,6 +191,9 @@ const ChatPage = () => {
           <>
             <main>
               <h4>Chat con {selectedUser.username}</h4>
+              {typingUser === selectedUser.email && (
+                <small>{selectedUser.username} está escribiendo...</small>
+              )}
               <div>
                 {messages.map((message) => (
                   <div key={message.id}>
@@ -164,7 +214,24 @@ const ChatPage = () => {
                 type="text"
                 placeholder="Escribe un mensaje..."
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={(e) => {
+                  setContent(e.target.value);
+
+                  if (!selectedUser) return;
+
+                  // Avisar que está escribiendo
+                  sendTyping(selectedUser.email, true);
+
+                  // Cancelar el temporizador anterior
+                  if (typingTimeoutRef.current) {
+                    clearTimeout(typingTimeoutRef.current);
+                  }
+
+                  // Crear uno nuevo
+                  typingTimeoutRef.current = setTimeout(() => {
+                    sendTyping(selectedUser.email, false);
+                  }, 1000);
+                }}
               />
               <button onClick={handleSendMessage}>Enviar</button>
             </footer>

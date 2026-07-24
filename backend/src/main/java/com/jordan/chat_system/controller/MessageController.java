@@ -3,6 +3,7 @@ package com.jordan.chat_system.controller;
 import com.jordan.chat_system.dto.MessageResponse;
 import com.jordan.chat_system.dto.MessageStatusUpdate;
 import com.jordan.chat_system.dto.SendMessageRequest;
+import com.jordan.chat_system.dto.UnreadCountUpdate;
 import com.jordan.chat_system.entity.Message;
 import com.jordan.chat_system.entity.User;
 import com.jordan.chat_system.service.MessageService;
@@ -59,6 +60,20 @@ public class MessageController {
                     )
             );
         }
+
+        long unreadCount = messageService.countUnreadMessages(
+                receiverId,
+                currentUser.getId()
+        );
+
+        messagingTemplate.convertAndSendToUser(
+                currentUser.getEmail(),
+                "/queue/unread-count",
+                new UnreadCountUpdate(
+                        receiverId,
+                        unreadCount
+                )
+        );
 
         return messageService.getConversation(
                 currentUser.getId(),
