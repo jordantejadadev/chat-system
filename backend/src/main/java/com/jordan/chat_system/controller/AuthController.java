@@ -7,6 +7,7 @@ import com.jordan.chat_system.entity.User;
 import com.jordan.chat_system.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,11 +19,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @PostMapping("/register")
     public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
 
         User user = authService.register(request);
+
+        messagingTemplate.convertAndSend(
+                "/topic/users-updated",
+                "refresh"
+        );
 
         return new AuthResponse(
                 user.getId(),

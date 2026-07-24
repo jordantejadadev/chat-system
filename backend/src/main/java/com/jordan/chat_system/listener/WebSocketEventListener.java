@@ -47,8 +47,6 @@ public class WebSocketEventListener {
 
         Authentication authentication = (Authentication) accessor.getUser();
 
-        System.out.println(authentication.getName());
-
         if(authentication != null) {
 
             onlineUserService.connect(authentication.getName());

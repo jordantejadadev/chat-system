@@ -26,14 +26,13 @@ const ChatPage = () => {
     selectedUserRef.current = selectedUser;
   }, [selectedUser]);
 
+  const loadUsers = async () => {
+    const allUsers = await getAllUsers();
+    setUsers(allUsers);
+  };
+
   // Carga la lista de contactos
   useEffect(() => {
-    async function loadUsers() {
-      const allUsers = await getAllUsers();
-      console.log(allUsers);
-
-      setUsers(allUsers);
-    }
     loadUsers();
   }, []);
 
@@ -45,7 +44,6 @@ const ChatPage = () => {
       try {
         const conversation = await getConversation(selectedUser.id);
         setMessages(conversation);
-        
       } catch (error) {
         console.error(error);
       }
@@ -77,6 +75,8 @@ const ChatPage = () => {
         }
       },
       (emails) => {
+        console.log("Online: ", emails);
+
         setUsers((previousUsers) =>
           previousUsers.map((user) => ({
             ...user,
@@ -107,7 +107,7 @@ const ChatPage = () => {
       },
       (unreadUpdate) => {
         console.log("Unread actualizado:", unreadUpdate);
-        
+
         setUsers((previousUsers) =>
           previousUsers.map((user) =>
             user.id === unreadUpdate.senderId
@@ -118,6 +118,9 @@ const ChatPage = () => {
               : user,
           ),
         );
+      },
+      async () => {
+        await loadUsers();
       },
     );
 

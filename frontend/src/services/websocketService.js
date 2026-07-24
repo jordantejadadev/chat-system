@@ -8,7 +8,8 @@ export function connect(
   onOnlineUsersChanged,
   onStatusUpdated,
   onTypingReceived,
-  onUnreadCountUpdated
+  onUnreadCountUpdated,
+  onUsersUpdated
 ) {
   stompClient = new Client({
     brokerURL: "ws://localhost:8080/ws",
@@ -44,9 +45,12 @@ export function connect(
 
       stompClient.subscribe("/user/queue/unread-count", (message) => {
         const body = JSON.parse(message.body);
-        console.log("UnreadCount: ", body);
-        
         onUnreadCountUpdated(body);
+      });
+
+      stompClient.subscribe("/topic/users-updated", () => {
+        console.log("Lista de usuarios actualizada");        
+        onUsersUpdated();
       });
     },
 
