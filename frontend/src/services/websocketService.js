@@ -9,10 +9,14 @@ export function connect(
   onStatusUpdated,
   onTypingReceived,
   onUnreadCountUpdated,
-  onUsersUpdated
+  onUsersUpdated,
+  onMessageDeleted,
+  onMessageEdited,
 ) {
   stompClient = new Client({
     brokerURL: "ws://localhost:8080/ws",
+
+    debug: (str) => console.log(str),    
 
     connectHeaders: {
       Authorization: `Bearer ${token}`,
@@ -23,7 +27,7 @@ export function connect(
     onConnect: () => {
       console.log("Conectado al WebSocket");
 
-      stompClient.subscribe("/user/queue/messages", (message) => {
+      stompClient.subscribe("/user/queue/messages", (message) => {        
         const body = JSON.parse(message.body);
         onMessageReceived(body);
       });
@@ -49,8 +53,18 @@ export function connect(
       });
 
       stompClient.subscribe("/topic/users-updated", () => {
-        console.log("Lista de usuarios actualizada");        
+        console.log("Lista de usuarios actualizada");
         onUsersUpdated();
+      });
+
+      stompClient.subscribe("/user/queue/message-deleted", (message) => {
+        const body = JSON.parse(message.body);
+        onMessageDeleted(body);
+      });
+
+      stompClient.subscribe("/user/queue/message-edited", (message) => {
+        const body = JSON.parse(message.body);
+        onMessageEdited(body);
       });
     },
 
@@ -76,19 +90,22 @@ export function disconnect() {
   }
 }
 
-export function sendMessage(receiverId, content) {
+export function sendMessage(receiverId, content, replyToId) {
+
   if (!stompClient.connected) {
     console.log("Aún no conectado");
     return;
-  }
+  }  
 
   stompClient.publish({
     destination: "/app/chat",
     body: JSON.stringify({
       receiverId,
       content,
+      replyToId,
     }),
-  });
+  });  
+  
 }
 
 export function sendTyping(receiver, typing) {

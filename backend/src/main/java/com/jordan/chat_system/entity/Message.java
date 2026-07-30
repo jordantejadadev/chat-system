@@ -38,4 +38,16 @@ public class Message {
     @Column(nullable = false)
     private MessageStatus status;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean deleted = false;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean edited = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reply_to_id")
+    private Message replyTo;
+
 }

@@ -22,11 +22,10 @@ public class ChatController {
     @MessageMapping("/chat")
     public void sendMessage(Principal principal, ChatMessage chatMessage) {
 
-        System.out.println("Mensaje recibido por websocket");
-
         SendMessageRequest request = new SendMessageRequest(
                 chatMessage.receiverId(),
-                chatMessage.content()
+                chatMessage.content(),
+                chatMessage.replyToId()
         );
 
         MessageResponse response = messageService.sendMessage(

@@ -15,3 +15,16 @@ export async function sendMessage(request) {
 export async function markAsRead(senderId) {
   await api.post(`/messages/read/${senderId}`);
 }
+
+export async function deleteMessage(messageId) {
+  const response = await api.delete(`/messages/${messageId}`);
+  return response.data;
+}
+
+export async function editMessage(messageId, content) {
+  const response = await api.patch(`/messages/${messageId}`, {
+    content
+  });
+
+  return response.data;
+}

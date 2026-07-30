@@ -2,6 +2,6 @@ package com.jordan.chat_system.dto;
 
 public record SendMessageRequest(
         Long receiverId,
-        String content
-) {
-}
+        String content,
+        Long replyToId
+) {}

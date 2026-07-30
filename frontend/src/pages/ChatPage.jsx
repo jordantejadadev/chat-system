@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { getConversation, markAsRead } from "../services/messageService";
+import {
+  deleteMessage,
+  editMessage,
+  getConversation,
+  markAsRead,
+} from "../services/messageService";
 import { getAllUsers } from "../services/userService";
 import {
   connect,
@@ -17,6 +22,9 @@ const ChatPage = () => {
   const [content, setContent] = useState("");
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [typingUser, setTypingUser] = useState(null);
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editingContent, setEditingContent] = useState("");
+  const [replyingTo, setReplyingTo] = useState(null);
 
   // Ref para que el callback siempre vea el selectedUser actual
   const selectedUserRef = useRef(selectedUser);
@@ -57,7 +65,7 @@ const ChatPage = () => {
 
     connect(
       user.token,
-      (newMessage) => {
+      (newMessage) => {                        
         const currentSelected = selectedUserRef.current;
 
         if (
@@ -105,9 +113,7 @@ const ChatPage = () => {
           setTypingUser(null);
         }
       },
-      (unreadUpdate) => {
-        console.log("Unread actualizado:", unreadUpdate);
-
+      (unreadUpdate) => {        
         setUsers((previousUsers) =>
           previousUsers.map((user) =>
             user.id === unreadUpdate.senderId
@@ -122,6 +128,31 @@ const ChatPage = () => {
       async () => {
         await loadUsers();
       },
+      (deleted) => {
+        setMessages((previous) =>
+          previous.map((message) =>
+            message.id === deleted.messageId
+              ? {
+                  ...message,
+                  deleted: true,
+                }
+              : message,
+          ),
+        );
+      },
+      (edited) => {
+        setMessages((previous) =>
+          previous.map((message) =>
+            message.id === edited.messageId
+              ? {
+                  ...message,
+                  content: edited.content,
+                  edited: edited.edited,
+                }
+              : message,
+          ),
+        );
+      },
     );
 
     return () => {
@@ -131,8 +162,17 @@ const ChatPage = () => {
 
   async function handleSendMessage() {
     if (content.trim() === "" || !selectedUser) return;
-    sendMessage(selectedUser.id, content);
+
+    console.log("replyingTo:", replyingTo);
+    
+    await sendMessage(
+      selectedUser.id,
+      content,
+      replyingTo?.id ?? null,
+    );
+
     setContent("");
+    setReplyingTo(null);
   }
 
   function getStatusIcon(status) {
@@ -147,6 +187,30 @@ const ChatPage = () => {
         return "";
     }
   }
+
+  const handleDeleteMessage = async (messageId) => {
+    try {
+      await deleteMessage(messageId);
+    } catch (error) {
+      console.error("Error eliminando mensaje: ", error);
+    }
+  };
+
+  const handleEditClick = (message) => {
+    setEditingMessageId(message.id);
+    setEditingContent(message.content);
+  };
+
+  const handleSaveEdit = async () => {
+    try {
+      await editMessage(editingMessageId, editingContent);
+
+      setEditingMessageId(null);
+      setEditingContent("");
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <div style={{ display: "flex" }}>
@@ -201,7 +265,57 @@ const ChatPage = () => {
                 {messages.map((message) => (
                   <div key={message.id}>
                     <strong>{message.sender}</strong>
-                    <p>{message.content}</p>
+                    {message.deleted ? (
+                      <i>🗑️ Este mensaje fue eliminado</i>
+                    ) : (
+                      <>
+                        {editingMessageId === message.id ? (
+                          <>                          
+                            <input
+                              value={editingContent}
+                              onChange={(e) =>
+                                setEditingContent(e.target.value)
+                              }
+                            />
+                            <button onClick={handleSaveEdit}>Guardar</button>
+                          </>
+                        ) : (
+                          <>
+                            {message.replyTo && (
+                              <div style={{
+                                borderLeft: "3px solid #4caf50",
+                                paddingLeft: "8px",
+                                marginBottom: "6px",
+                                background: "#f7f7f7",
+                                fontSize: "0.9rem",
+                              }}>
+                                <strong>{message.replyTo.sender}</strong>
+                                <div>{message.replyTo.content}</div>
+                              </div>                              
+                            )}
+                            <p>{message.content}</p>
+                            {!message.deleted && (
+                              <button onClick={() => setReplyingTo(message)}>Responder</button>
+                            )}
+                            {message.edited && <small>(editado)</small>}
+                          </>
+                        )}
+                        {message.senderId === user.id && (
+                          <button
+                            onClick={() => handleDeleteMessage(message.id)}
+                          >
+                            Eliminar
+                          </button>
+                        )}
+                        {message.senderId === user.id &&
+                          !message.deleted &&
+                          editingMessageId === null && (
+                            <button onClick={() => handleEditClick(message)}>
+                              ✏️
+                            </button>
+                          )}
+                      </>
+                    )}
                     {message.senderId === user.id && (
                       <small>{getStatusIcon(message.status)}</small>
                     )}
@@ -213,6 +327,18 @@ const ChatPage = () => {
             <hr />
 
             <footer>
+              {replyingTo && (
+                            <div style={{
+                              borderLeft: "4px solid green",
+                              padding: "8px",
+                              marginBottom: "8px",
+                              background: "#f5f5f5",
+                            }}>
+                              <strong>Respondiendo a {replyingTo.sender}</strong>
+                              <div>{replyingTo.content}</div>
+                              <button onClick={()=> setReplyingTo(null)}>X</button>
+                            </div>
+                          )}
               <input
                 type="text"
                 placeholder="Escribe un mensaje..."

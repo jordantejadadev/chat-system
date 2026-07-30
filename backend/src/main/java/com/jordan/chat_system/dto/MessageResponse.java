@@ -12,6 +12,9 @@ public record MessageResponse(
         String receiver,
         String content,
         LocalDateTime sentAt,
-        MessageStatus status
+        MessageStatus status,
+        ReplyMessage replyTo,
+        boolean deleted,
+        boolean edited
 ) {}
 

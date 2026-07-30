@@ -26,6 +26,8 @@ export function connect(onMessageReceived) {
 }
 
 export function sendMessage(chatMessage) {
+  console.log("SE LLAMÓ sendMessage DEL WEBSOCKET");
+  
   if (stompClient && stompClient.connected) {
     stompClient.publish({
       destination: "/app/chat",

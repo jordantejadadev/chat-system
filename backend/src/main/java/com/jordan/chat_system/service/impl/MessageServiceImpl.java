@@ -1,6 +1,8 @@
 package com.jordan.chat_system.service.impl;
 
+import com.jordan.chat_system.dto.EditMessageRequest;
 import com.jordan.chat_system.dto.MessageResponse;
+import com.jordan.chat_system.dto.ReplyMessage;
 import com.jordan.chat_system.dto.SendMessageRequest;
 import com.jordan.chat_system.entity.Message;
 import com.jordan.chat_system.entity.MessageStatus;
@@ -10,6 +12,7 @@ import com.jordan.chat_system.repository.MessageRepository;
 import com.jordan.chat_system.repository.UserRepository;
 import com.jordan.chat_system.service.MessageService;
 import com.jordan.chat_system.service.OnlineUserService;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ public class MessageServiceImpl implements MessageService {
     private final OnlineUserService onlineUserService;
 
     @Override
+    @Transactional()
     public MessageResponse sendMessage(
             String senderEmail,
             SendMessageRequest request
@@ -43,15 +47,33 @@ public class MessageServiceImpl implements MessageService {
                 ? MessageStatus.DELIVERED
                 : MessageStatus.SENT;
 
+        Message replyTo = null;
+
+        if (request.replyToId() != null) {
+            replyTo = messageRepository.findById(request.replyToId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Mensaje no encontrado"));
+        }
+
         Message message = Message.builder()
                 .sender(sender)
                 .receiver(receiver)
                 .content(request.content())
+                .replyTo(replyTo)
                 .sentAt(LocalDateTime.now())
                 .status(status)
                 .build();
 
         Message saved = messageRepository.save(message);
+
+        ReplyMessage replyMessage = null;
+
+        if(saved.getReplyTo() != null) {
+            replyMessage = new ReplyMessage(
+                    saved.getReplyTo().getId(),
+                    saved.getReplyTo().getContent(),
+                    saved.getReplyTo().getSender().getUsername()
+            );
+        }
 
         return new MessageResponse(
                 saved.getId(),
@@ -61,11 +83,15 @@ public class MessageServiceImpl implements MessageService {
                 saved.getReceiver().getEmail(),
                 saved.getContent(),
                 saved.getSentAt(),
-                saved.getStatus()
+                saved.getStatus(),
+                replyMessage,
+                saved.isDeleted(),
+                saved.isEdited()
         );
     }
 
     @Override
+    @Transactional
     public List<MessageResponse> getConversation(Long senderId, Long receiverId) {
         List<Message> messages = messageRepository.findConversation(
                 senderId,
@@ -73,17 +99,32 @@ public class MessageServiceImpl implements MessageService {
         );
 
         return messages.stream()
-                .map(message -> new MessageResponse(
-                        message.getId(),
-                        message.getSender().getId(),
-                        message.getReceiver().getId(),
-                        message.getSender().getEmail(),
-                        message.getReceiver().getEmail(),
-                        message.getContent(),
-                        message.getSentAt(),
-                        message.getStatus()
-                )).toList();
+                .map(message -> {
 
+                    ReplyMessage replyMessage = null;
+
+                    if (message.getReplyTo() != null) {
+                        replyMessage = new ReplyMessage(
+                                message.getReplyTo().getId(),
+                                message.getReplyTo().getContent(),
+                                message.getReplyTo().getSender().getUsername()
+                        );
+                    }
+
+                    return new MessageResponse(
+                            message.getId(),
+                            message.getSender().getId(),
+                            message.getReceiver().getId(),
+                            message.getSender().getEmail(),
+                            message.getReceiver().getEmail(),
+                            message.getContent(),
+                            message.getSentAt(),
+                            message.getStatus(),
+                            replyMessage,
+                            message.isDeleted(),
+                            message.isEdited()
+                    );
+                }).toList();
     }
 
     @Override
@@ -129,5 +170,46 @@ public class MessageServiceImpl implements MessageService {
                 senderId,
                 receiverId
         );
+    }
+
+    @Override
+    public Message deleteMessage(
+            Long messageId,
+            String currentUserEmail
+    ) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Mensaje no encontrado"));
+
+        if(!message.getSender().getEmail().equals(currentUserEmail)) {
+            throw new RuntimeException("No puedes eliminar este mensaje");
+        }
+
+        message.setDeleted(true);
+
+        return messageRepository.save(message);
+    }
+
+    @Override
+    public Message editMessage(
+            Long messageId,
+            String currentUserEmail,
+            EditMessageRequest request
+    ) {
+        Message message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new ResourceNotFoundException("Mensaje no encontrado"));
+
+        if (!message.getSender().getEmail().equals(currentUserEmail)) {
+            throw new RuntimeException("No puedes editar este mensaje");
+        }
+
+        if (message.isDeleted()) {
+            throw new RuntimeException("No puedes editar un mensaje eliminado");
+        }
+
+        message.setContent(request.content());
+        message.setEdited(true);
+
+        return messageRepository.save(message);
     }
 }

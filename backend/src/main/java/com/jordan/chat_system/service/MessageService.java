@@ -1,5 +1,6 @@
 package com.jordan.chat_system.service;
 
+import com.jordan.chat_system.dto.EditMessageRequest;
 import com.jordan.chat_system.dto.MessageResponse;
 import com.jordan.chat_system.dto.SendMessageRequest;
 import com.jordan.chat_system.entity.Message;
@@ -22,5 +23,16 @@ public interface MessageService {
     long countUnreadMessages(
             Long senderId,
             Long receiverId
+    );
+
+    Message deleteMessage(
+            Long messageId,
+            String currentUserEmail
+    );
+
+    Message editMessage(
+            Long messageId,
+            String currentUserEmail,
+            EditMessageRequest request
     );
 }

@@ -1,9 +1,6 @@
 package com.jordan.chat_system.controller;
 
-import com.jordan.chat_system.dto.MessageResponse;
-import com.jordan.chat_system.dto.MessageStatusUpdate;
-import com.jordan.chat_system.dto.SendMessageRequest;
-import com.jordan.chat_system.dto.UnreadCountUpdate;
+import com.jordan.chat_system.dto.*;
 import com.jordan.chat_system.entity.Message;
 import com.jordan.chat_system.entity.User;
 import com.jordan.chat_system.service.MessageService;
@@ -105,5 +102,78 @@ public class MessageController {
                     )
             );
         }
+
+        long unreadCount = messageService.countUnreadMessages(
+                         senderId,
+                         currentUser.getId()
+        );
+
+        messagingTemplate.convertAndSendToUser(
+                currentUser.getEmail(),
+                "/queue/unread-count",
+                new UnreadCountUpdate(
+                        senderId,
+                        unreadCount
+                )
+        );
+    }
+
+    @DeleteMapping("/{messageId}")
+    public void deleteMessage(
+            @PathVariable Long messageId,
+            Authentication authentication
+    ){
+
+        Message message = messageService.deleteMessage(
+                messageId,
+                authentication.getName()
+        );
+
+        MessageDeleted deleted = new MessageDeleted(message.getId());
+
+        messagingTemplate.convertAndSendToUser(
+                message.getSender().getEmail(),
+                "/queue/message-deleted",
+                deleted
+        );
+
+        messagingTemplate.convertAndSendToUser(
+                message.getReceiver().getEmail(),
+                "/queue/message-deleted",
+                deleted
+        );
+
+    }
+
+    @PatchMapping("/{messageId}")
+    public void editMessage(
+            @PathVariable Long messageId,
+            @RequestBody EditMessageRequest request,
+            Authentication authentication
+    ) {
+        System.out.println("Entrpo al PATCH");
+        Message message = messageService.editMessage(
+                messageId,
+                authentication.getName(),
+                request
+        );
+
+        MessageEdited edited = new MessageEdited(
+                message.getId(),
+                message.getContent(),
+                message.isEdited()
+        );
+
+        messagingTemplate.convertAndSendToUser(
+                message.getSender().getEmail(),
+                "/queue/message-edited",
+                edited
+        );
+
+        messagingTemplate.convertAndSendToUser(
+                message.getReceiver().getEmail(),
+                "/queue/message-edited",
+                edited
+        );
     }
 }
