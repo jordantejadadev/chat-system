@@ -67,4 +67,21 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             @Param("senderId") Long senderId,
             @Param("receiverId") Long receiverId
     );
+
+    @Query("""
+    SELECT m
+    FROM Message m
+    WHERE (
+        (m.sender.id = :userId AND m.receiver.id = :contactId)
+        OR
+        (m.sender.id = :contactId AND m.receiver.id = : userId)
+    )
+    AND LOWER(m.content) LIKE LOWER(CONCAT('%', :query, '%'))
+    ORDER BY m.sentAt ASC
+""")
+    List<Message> searchConversation(
+            @Param("userId") Long userId,
+            @Param("contactId") Long contactId,
+            @Param("query") String query
+    );
 }

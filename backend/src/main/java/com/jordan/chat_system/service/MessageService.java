@@ -35,4 +35,10 @@ public interface MessageService {
             String currentUserEmail,
             EditMessageRequest request
     );
+
+    List<MessageResponse> searchConversation(
+            Long userId,
+            Long contactId,
+            String query
+    );
 }

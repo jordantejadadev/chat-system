@@ -176,4 +176,21 @@ public class MessageController {
                 edited
         );
     }
+
+    @GetMapping("/search")
+    public List<MessageResponse> searchConversation(
+            @RequestParam Long contactId,
+            @RequestParam String query,
+            Authentication authentication
+    ){
+        User currentUser = userService.getCurrentUser(
+                authentication.getName()
+        );
+
+        return messageService.searchConversation(
+                currentUser.getId(),
+                contactId,
+                query
+        );
+    }
 }

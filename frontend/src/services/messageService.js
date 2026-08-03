@@ -28,3 +28,14 @@ export async function editMessage(messageId, content) {
 
   return response.data;
 }
+
+export async function searchConversation(contactId, query) {
+  const response = await api.get("/messages/search", {
+    params: {
+      contactId,
+      query
+    },    
+  });
+
+  return response.data;
+}

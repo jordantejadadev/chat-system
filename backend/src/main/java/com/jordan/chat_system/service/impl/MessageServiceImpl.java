@@ -212,4 +212,46 @@ public class MessageServiceImpl implements MessageService {
 
         return messageRepository.save(message);
     }
+
+    @Override
+    @Transactional
+    public List<MessageResponse> searchConversation(
+            Long userId,
+            Long contactId,
+            String query
+    ) {
+        List<Message> messages = messageRepository.searchConversation(
+                userId,
+                contactId,
+                query
+        );
+
+        return messages.stream()
+                .map(message -> {
+                    ReplyMessage reply = null;
+
+                    if(message.getReplyTo() != null) {
+                        reply = new ReplyMessage(
+                                message.getReplyTo().getId(),
+                                message.getReplyTo().getContent(),
+                                message.getReplyTo().getSender().getUsername()
+                        );
+                    }
+
+                    return new MessageResponse(
+                            message.getId(),
+                            message.getSender().getId(),
+                            message.getReceiver().getId(),
+                            message.getSender().getEmail(),
+                            message.getReceiver().getEmail(),
+                            message.getContent(),
+                            message.getSentAt(),
+                            message.getStatus(),
+                            reply,
+                            message.isDeleted(),
+                            message.isEdited()
+                    );
+                })
+                .toList();
+    }
 }
