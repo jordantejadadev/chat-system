@@ -2,37 +2,46 @@ export default function ContactsList({
   users,
   selectedUser,
   setSelectedUser,
-  onlineUsers,
 }) {
   return (
-    <aside>
-      <h3>Usuarios</h3>
+    <aside
+      style={{
+        width: "200px",
+        borderRight: "1px solid #ccc",
+      }}
+    >
+      <h3>Contactos</h3>
 
-      <ul>
-        {users.map((user) => (
-          <li
-            key={user.id}
-            style={{
-              cursor: "pointer",
-              fontWeight:
-                selectedUser?.id === user.id ? "bold" : "normal",
-            }}
-            onClick={() => setSelectedUser(user)}
-          >
-            {user.username}
+      {users.map((u) => (
+        <div
+          key={u.id}
+          onClick={() => setSelectedUser(u)}
+          style={{
+            cursor: "pointer",
+            fontWeight:
+              selectedUser?.id === u.id ? "bold" : "normal",
+            padding: "4px 0",
+          }}
+        >
+          {u.online ? "🟢" : "⚪"} {u.username}
 
-            {onlineUsers.includes(user.email) && (
-              <span style={{ color: "green" }}> ●</span>
-            )}
-
-            {user.unreadCount > 0 && (
-              <strong style={{ color: "red" }}>
-                {" "}({user.unreadCount})
-              </strong>
-            )}
-          </li>
-        ))}
-      </ul>
+          {u.unreadCount > 0 && (
+            <span
+              style={{
+                marginLeft: "8px",
+                backgroundColor: "red",
+                color: "white",
+                borderRadius: "50%",
+                padding: "2px 8px",
+                fontSize: "12px",
+                fontWeight: "bold",
+              }}
+            >
+              {u.unreadCount}
+            </span>
+          )}
+        </div>
+      ))}
     </aside>
   );
 }
