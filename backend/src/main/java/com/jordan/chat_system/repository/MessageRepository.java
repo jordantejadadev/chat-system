@@ -2,6 +2,8 @@ package com.jordan.chat_system.repository;
 
 import com.jordan.chat_system.entity.Message;
 import com.jordan.chat_system.entity.MessageStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,11 +21,12 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
         (m.sender.id = :senderId AND m.receiver.id = :receiverId)
         OR
         (m.sender.id = :receiverId AND m.receiver.id = :senderId)
-    ORDER BY m.sentAt ASC
+    ORDER BY m.sentAt DESC
 """)
-    List<Message> findConversation(
+    Page<Message> findConversation(
             @Param("senderId") Long senderId,
-            @Param("receiverId") Long receiverId
+            @Param("receiverId") Long receiverId,
+            Pageable pageable
     );
 
     @Query("""

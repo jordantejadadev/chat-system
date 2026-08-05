@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import {
   deleteMessage,
@@ -28,10 +28,16 @@ const ChatPage = () => {
   const [replyingTo, setReplyingTo] = useState(null);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Ref para que el callback siempre vea el selectedUser actual
   const selectedUserRef = useRef(selectedUser);
   const typingTimeoutRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+  const previousScrollHeightRef = useRef(0);
+  const restoringScrollRef = useRef(false);
 
   useEffect(() => {
     selectedUserRef.current = selectedUser;
@@ -53,8 +59,10 @@ const ChatPage = () => {
 
     async function loadConversation() {
       try {
-        const conversation = await getConversation(selectedUser.id);
-        setMessages(conversation);
+        const conversation = await getConversation(selectedUser.id, 0, 20);
+        setMessages(conversation.content.reverse());
+        setPage(1);
+        setHasMore(!conversation.last);
       } catch (error) {
         console.error(error);
       }
@@ -180,6 +188,22 @@ const ChatPage = () => {
     return () => clearTimeout(timeout);
   }, [search, selectedUser]);
 
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+
+    if (!container) return;
+
+    function handleScroll() {
+      if (container.scrollTop === 0) {
+        loadMoreMessages();
+      }
+    }
+
+    container.addEventListener("scroll", handleScroll);
+
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [page, hasMore, loadingMore, selectedUser]);
+
   async function handleSendMessage() {
     if (content.trim() === "" || !selectedUser) return;
 
@@ -227,6 +251,49 @@ const ChatPage = () => {
       console.error(error);
     }
   };
+
+  useLayoutEffect(() => {
+
+    if (!restoringScrollRef.current) return;
+
+    const container = messagesContainerRef.current;
+
+    if (!container) return;
+
+    const newHeight = container.scrollHeight;
+
+    container.scrollTop += newHeight - previousScrollHeightRef.current;
+
+    restoringScrollRef.current = false;
+  }, [messages]);
+
+  async function loadMoreMessages() {
+    if (!selectedUser) return;
+
+    if (!hasMore) return;
+
+    if (loadingMore) return;
+
+    console.log("Guardando altura");
+
+    setLoadingMore(true);
+
+    const container = messagesContainerRef.current;
+
+    previousScrollHeightRef.current = container.scrollHeight;
+
+    restoringScrollRef.current = true;
+
+    const response = await getConversation(selectedUser.id, page, 20);
+
+    setMessages((previous) => [...response.content.reverse(), ...previous]);
+
+    setPage((previous) => previous + 1);
+
+    setHasMore(!response.last);
+
+    setLoadingMore(false);
+  }
 
   return (
     <div style={{ display: "flex" }}>
@@ -283,7 +350,10 @@ const ChatPage = () => {
               {typingUser === selectedUser.email && (
                 <small>{selectedUser.username} está escribiendo...</small>
               )}
-              <div>
+              <div
+                ref={messagesContainerRef}
+                style={{ height: "500px", overflow: "auto" }}
+              >
                 {(search.trim() === "" ? messages : searchResults).map(
                   (message) => (
                     <div key={message.id}>

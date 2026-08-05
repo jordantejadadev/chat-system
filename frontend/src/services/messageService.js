@@ -1,7 +1,12 @@
 import api from "../api/axios";
 
-export async function getConversation(receiverId) {
-  const response = await api.get(`/messages/conversation/${receiverId}`);
+export async function getConversation(receiverId, page = 0, size = 20) {
+  const response = await api.get(`/messages/conversation/${receiverId}`, {
+    params: {
+      page,
+      size,
+    },
+  });
 
   return response.data;
 }
@@ -23,7 +28,7 @@ export async function deleteMessage(messageId) {
 
 export async function editMessage(messageId, content) {
   const response = await api.patch(`/messages/${messageId}`, {
-    content
+    content,
   });
 
   return response.data;
@@ -33,8 +38,8 @@ export async function searchConversation(contactId, query) {
   const response = await api.get("/messages/search", {
     params: {
       contactId,
-      query
-    },    
+      query,
+    },
   });
 
   return response.data;

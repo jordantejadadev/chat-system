@@ -6,6 +6,7 @@ import com.jordan.chat_system.entity.User;
 import com.jordan.chat_system.service.MessageService;
 import com.jordan.chat_system.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -33,9 +34,11 @@ public class MessageController {
     }
 
     @GetMapping("/conversation/{receiverId}")
-    public List<MessageResponse> getConversation(
+    public Page<MessageResponse> getConversation(
             Authentication authentication,
-            @PathVariable Long receiverId
+            @PathVariable Long receiverId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) {
         User currentUser = userService.getCurrentUser(
                 authentication.getName()
@@ -74,7 +77,9 @@ public class MessageController {
 
         return messageService.getConversation(
                 currentUser.getId(),
-                receiverId
+                receiverId,
+                page,
+                size
         );
     }
 

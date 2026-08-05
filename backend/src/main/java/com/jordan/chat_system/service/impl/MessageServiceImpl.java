@@ -13,9 +13,13 @@ import com.jordan.chat_system.repository.UserRepository;
 import com.jordan.chat_system.service.MessageService;
 import com.jordan.chat_system.service.OnlineUserService;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -92,13 +96,20 @@ public class MessageServiceImpl implements MessageService {
 
     @Override
     @Transactional
-    public List<MessageResponse> getConversation(Long senderId, Long receiverId) {
-        List<Message> messages = messageRepository.findConversation(
-                senderId,
-                receiverId
+    public Page<MessageResponse> getConversation(Long senderId, Long receiverId, int page, int size) {
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size
         );
 
-        return messages.stream()
+        Page<Message> messages = messageRepository.findConversation(
+                senderId,
+                receiverId,
+                pageable
+        );
+
+        return messages
                 .map(message -> {
 
                     ReplyMessage replyMessage = null;
@@ -124,7 +135,7 @@ public class MessageServiceImpl implements MessageService {
                             message.isDeleted(),
                             message.isEdited()
                     );
-                }).toList();
+                });
     }
 
     @Override
