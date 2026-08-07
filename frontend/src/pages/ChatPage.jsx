@@ -22,9 +22,10 @@ import MessageInput from "../components/MessageInput";
 import { useConversation } from "../hooks/useConversation";
 import { useChatWebSocket } from "../hooks/useChatWebSocket";
 import { useMessageSearch } from "../hooks/useMessageSearch";
+import { logoutRequest } from "../services/authService";
 
 const ChatPage = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [content, setContent] = useState("");
@@ -123,6 +124,15 @@ const ChatPage = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await logoutRequest();
+      disconnect();
+    } finally {
+      logout();
+    }
+  };
+
   const editing = {
     editingMessageId,
     editingContent,
@@ -156,6 +166,7 @@ const ChatPage = () => {
         <header>
           <h2>{user.username}</h2>
           <p>{user.email}</p>
+          <button onClick={handleLogout}>Cerrar Sesión</button>
         </header>
 
         <hr />
@@ -167,7 +178,7 @@ const ChatPage = () => {
                 selectedUser={selectedUser}
                 search={search}
                 setSearch={setSearch}
-                typingUser={typingUser}
+                typingUser={typingUser}                
               />
               <MessageList
                 messages={messages}

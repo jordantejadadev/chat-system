@@ -12,7 +12,7 @@ export function connect(
   onUsersUpdated,
   onMessageDeleted,
   onMessageEdited,
-  onUserLoggedIn,
+  onUserStatusChanged,
 ) {
   stompClient = new Client({
     brokerURL: "ws://localhost:8080/ws",
@@ -70,7 +70,7 @@ export function connect(
 
       stompClient.subscribe("/topic/user-notifications", (message) => {
         const body = JSON.parse(message.body);
-        if (onUserLoggedIn) onUserLoggedIn(body);
+        if (onUserStatusChanged) onUserStatusChanged(body);
       });
     },
 
@@ -91,6 +91,8 @@ export function connect(
 }
 
 export function disconnect() {
+  console.log("Desconectando STOMP...");
+  
   if (stompClient) {
     stompClient.deactivate();
   }

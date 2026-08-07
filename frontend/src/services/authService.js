@@ -16,3 +16,7 @@ export async function getCurrentUser() {
 
     return response.data;
 }
+
+export async function logoutRequest() {
+    await api.post("/auth/logout");
+}

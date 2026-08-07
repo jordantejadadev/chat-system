@@ -2,10 +2,10 @@ export default function ChatHeader({
   selectedUser,
   search,
   setSearch,
-  typingUser,
+  typingUser,  
 }) {
   return (
-    <>
+    <>    
       <h4>Chat con {selectedUser.username}</h4>
 
       <input

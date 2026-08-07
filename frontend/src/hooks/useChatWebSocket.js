@@ -101,13 +101,19 @@ export function useChatWebSocket({
     );
   };
 
-  const handleUserLoggedIn = (notification) => {
-    if (notification.username === user.username) return;
+  const handleUserStatusChanged = (notification) => {
+    console.log("notification.username:", notification.username);
+    console.log("user.username", user.username);
+    console.log("user.email", user.email);    
+    
+    if (notification.username === user.email) return;
+
+    const icon = notification.type === "LOGOUT" ? "👋" : "🔔";
 
     toast(notification.message, {
       duration: 4000,
       position: "top-right",
-      icon: "🔔",
+      icon,
     });
   };
 
@@ -124,7 +130,7 @@ export function useChatWebSocket({
       handleUsersUpdated,
       handleMessageDeleted,
       handleMessageEdited,
-      handleUserLoggedIn,
+      handleUserStatusChanged
     );
 
     return () => disconnect();
