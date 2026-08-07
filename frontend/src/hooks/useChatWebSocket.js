@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
 import { connect, disconnect } from "../services/websocketService";
+import toast from "react-hot-toast";
 
 export function useChatWebSocket({
   user,
@@ -100,6 +101,16 @@ export function useChatWebSocket({
     );
   };
 
+  const handleUserLoggedIn = (notification) => {
+    if (notification.username === user.username) return;
+
+    toast(notification.message, {
+      duration: 4000,
+      position: "top-right",
+      icon: "🔔",
+    });
+  };
+
   useEffect(() => {
     if (!user) return;
 
@@ -112,7 +123,8 @@ export function useChatWebSocket({
       handleUnreadUpdated,
       handleUsersUpdated,
       handleMessageDeleted,
-      handleMessageEdited
+      handleMessageEdited,
+      handleUserLoggedIn,
     );
 
     return () => disconnect();

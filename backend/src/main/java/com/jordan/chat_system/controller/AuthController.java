@@ -2,6 +2,7 @@ package com.jordan.chat_system.controller;
 
 import com.jordan.chat_system.dto.AuthResponse;
 import com.jordan.chat_system.dto.LoginRequest;
+import com.jordan.chat_system.dto.NotificationMessage;
 import com.jordan.chat_system.dto.RegisterRequest;
 import com.jordan.chat_system.entity.User;
 import com.jordan.chat_system.service.AuthService;
@@ -42,6 +43,18 @@ public class AuthController {
 
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
-        return authService.login(request);
+
+        AuthResponse response = authService.login(request);
+
+        messagingTemplate.convertAndSend(
+                "/topic/user-notifications",
+                new NotificationMessage(
+                        "LOGIN",
+                        response.username() + " se ha conectado",
+                        response.username()
+                )
+        );
+
+        return response;
     }
 }

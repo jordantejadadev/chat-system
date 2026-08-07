@@ -12,11 +12,12 @@ export function connect(
   onUsersUpdated,
   onMessageDeleted,
   onMessageEdited,
+  onUserLoggedIn,
 ) {
   stompClient = new Client({
     brokerURL: "ws://localhost:8080/ws",
 
-    debug: (str) => console.log(str),    
+    debug: (str) => console.log(str),
 
     connectHeaders: {
       Authorization: `Bearer ${token}`,
@@ -27,7 +28,7 @@ export function connect(
     onConnect: () => {
       console.log("Conectado al WebSocket");
 
-      stompClient.subscribe("/user/queue/messages", (message) => {        
+      stompClient.subscribe("/user/queue/messages", (message) => {
         const body = JSON.parse(message.body);
         onMessageReceived(body);
       });
@@ -66,6 +67,11 @@ export function connect(
         const body = JSON.parse(message.body);
         onMessageEdited(body);
       });
+
+      stompClient.subscribe("/topic/user-notifications", (message) => {
+        const body = JSON.parse(message.body);
+        if (onUserLoggedIn) onUserLoggedIn(body);
+      });
     },
 
     onStompError: (frame) => {
@@ -91,11 +97,10 @@ export function disconnect() {
 }
 
 export function sendMessage(receiverId, content, replyToId) {
-
   if (!stompClient.connected) {
     console.log("Aún no conectado");
     return;
-  }  
+  }
 
   stompClient.publish({
     destination: "/app/chat",
@@ -104,8 +109,7 @@ export function sendMessage(receiverId, content, replyToId) {
       content,
       replyToId,
     }),
-  });  
-  
+  });
 }
 
 export function sendTyping(receiver, typing) {
