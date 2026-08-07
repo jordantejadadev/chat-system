@@ -112,7 +112,7 @@ export function useChatWebSocket({
       handleUnreadUpdated,
       handleUsersUpdated,
       handleMessageDeleted,
-      handleMessageEdited,
+      handleMessageEdited
     );
 
     return () => disconnect();
