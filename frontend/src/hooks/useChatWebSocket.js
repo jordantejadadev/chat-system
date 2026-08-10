@@ -106,7 +106,7 @@ export function useChatWebSocket({
     console.log("user.username", user.username);
     console.log("user.email", user.email);    
     
-    if (notification.username === user.email) return;
+    if (notification.email === user.email) return;
 
     const icon = notification.type === "LOGOUT" ? "👋" : "🔔";
 
