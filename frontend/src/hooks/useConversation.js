@@ -10,15 +10,15 @@ export function useConversation(selectedUser) {
   const messagesContainerRef = useRef(null);
   const previousScrollHeightRef = useRef(0);
   const restoringScrollRef = useRef(false);
+  const shouldScrollToBottomRef = useRef(false);
+  const isNearBottomRef = useRef(true);
 
   async function loadMoreMessages() {
     if (!selectedUser) return;
 
     if (!hasMore) return;
 
-    if (loadingMore) return;
-
-    console.log("Guardando altura");
+    if (loadingMore) return;    
 
     setLoadingMore(true);
 
@@ -48,6 +48,13 @@ export function useConversation(selectedUser) {
         if (container.scrollTop === 0) {
           loadMoreMessages();
         }
+
+        const distanceToBottom =
+          container.scrollHeight -
+          container.scrollTop -
+          container.clientHeight;
+
+        isNearBottomRef.current = distanceToBottom < 150;
       }
   
       container.addEventListener("scroll", handleScroll);
@@ -56,17 +63,32 @@ export function useConversation(selectedUser) {
     }, [page, hasMore, loadingMore, selectedUser]);
 
   useLayoutEffect(() => {
-    if (!restoringScrollRef.current) return;
-
     const container = messagesContainerRef.current;
 
     if (!container) return;
 
-    const newHeight = container.scrollHeight;
+    if (restoringScrollRef.current) {
+      // Venimos de paginar hacia arriba: mantener la posición de lectura
+      const newHeight = container.scrollHeight;
 
-    container.scrollTop += newHeight - previousScrollHeightRef.current;
+      container.scrollTop += newHeight - previousScrollHeightRef.current;
 
-    restoringScrollRef.current = false;
+      restoringScrollRef.current = false;
+      return;
+    }
+
+    if (shouldScrollToBottomRef.current) {
+      // Venimos de cargar la conversación desde cero: ir al último mensaje
+      container.scrollTop = container.scrollHeight;
+
+      shouldScrollToBottomRef.current = false;
+      return;
+    }
+
+    if (isNearBottomRef.current) {
+      // Llegó un mensaje nuevo y ya estabas leyendo cerca del final: seguirlo
+      container.scrollTop = container.scrollHeight;
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -76,6 +98,7 @@ export function useConversation(selectedUser) {
       try {
         const conversation = await getConversation(selectedUser.id, 0, 20);
 
+        shouldScrollToBottomRef.current = true;
         setMessages(conversation.content.reverse());
         setPage(1);
         setHasMore(!conversation.last);

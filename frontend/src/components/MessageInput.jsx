@@ -10,60 +10,83 @@ export default function MessageInput({
   typingTimeoutRef,
 }) {
   return (
-    <footer>
+    <footer className="border-t border-gray-200 bg-white px-4 py-3">
+
+      {/* Reply */}
       {replyingTo && (
-        <div
-          style={{
-            borderLeft: "4px solid green",
-            padding: "8px",
-            marginBottom: "8px",
-            background: "#f5f5f5",
-          }}
-        >
-          <strong>
-            Respondiendo a {replyingTo.sender}
-          </strong>
+        <div className="mb-3 flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
 
-          <div>{replyingTo.content}</div>
+          {/* Barra lateral */}
+          <div className="h-10 w-1 rounded-full bg-blue-500" />
 
+          {/* Información del mensaje */}
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-blue-600">
+              Respondiendo a {replyingTo.sender}
+            </p>
+
+            <p className="truncate text-sm text-gray-500">
+              {replyingTo.content}
+            </p>
+          </div>
+
+          {/* Cancelar reply */}
           <button
             onClick={() => setReplyingTo(null)}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-200 hover:text-gray-700"
+            title="Cancelar respuesta"
           >
-            X
+            ✕
           </button>
         </div>
       )}
 
-      <input
-        type="text"
-        placeholder="Escribe un mensaje..."
-        value={content}
-        onChange={(e) => {
-          setContent(e.target.value);
+      {/* Input */}
+      <div className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-2 py-2 transition focus-within:border-blue-400 focus-within:bg-white">
 
-          if (!selectedUser) return;
-
-          sendTyping(selectedUser.email, true);
-
-          if (typingTimeoutRef.current) {
-            clearTimeout(
-              typingTimeoutRef.current
-            );
+        <input
+          type="text"
+          placeholder={
+            selectedUser
+              ? "Escribe un mensaje..."
+              : "Selecciona una conversación..."
           }
+          value={content}
+          disabled={!selectedUser}
+          onChange={(e) => {
+            setContent(e.target.value);
 
-          typingTimeoutRef.current =
-            setTimeout(() => {
-              sendTyping(
-                selectedUser.email,
-                false
-              );
+            if (!selectedUser) return;
+
+            sendTyping(selectedUser.email, true);
+
+            if (typingTimeoutRef.current) {
+              clearTimeout(typingTimeoutRef.current);
+            }
+
+            typingTimeoutRef.current = setTimeout(() => {
+              sendTyping(selectedUser.email, false);
             }, 1000);
-        }}
-      />
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleSendMessage();
+            }
+          }}
+          className="flex-1 bg-transparent px-3 py-2 text-sm text-gray-800 outline-none placeholder:text-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
+        />
 
-      <button onClick={handleSendMessage}>
-        Enviar
-      </button>
+        {/* Enviar */}
+        <button
+          onClick={handleSendMessage}
+          disabled={!selectedUser || !content.trim()}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white transition hover:bg-blue-700 active:scale-95 disabled:cursor-not-allowed disabled:bg-gray-300"
+          title="Enviar mensaje"
+        >
+          ➤
+        </button>
+      </div>
     </footer>
   );
 }

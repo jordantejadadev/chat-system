@@ -1,5 +1,6 @@
 import { useContext, useEffect } from "react";
 import { connect, disconnect } from "../services/websocketService";
+import { markAsRead } from "../services/messageService";
 import toast from "react-hot-toast";
 
 export function useChatWebSocket({
@@ -21,6 +22,11 @@ export function useChatWebSocket({
 
       return [...previous, message];
     });
+
+    // Si ya tenés esa conversación abierta, se marca como leído al toque
+    if (message.senderId === selectedUser?.id) {
+      markAsRead(message.senderId);
+    }
   };
 
   const handleOnlineUsersChanged = (onlineUsers) => {
@@ -63,7 +69,10 @@ export function useChatWebSocket({
         u.id === unreadUpdate.senderId
           ? {
               ...u,
-              unreadCount: unreadUpdate.unreadCount,
+              unreadCount:
+                unreadUpdate.senderId === selectedUser?.id
+                  ? 0
+                  : unreadUpdate.unreadCount,
             }
           : u,
       ),
@@ -102,10 +111,6 @@ export function useChatWebSocket({
   };
 
   const handleUserStatusChanged = (notification) => {
-    console.log("notification.username:", notification.username);
-    console.log("user.username", user.username);
-    console.log("user.email", user.email);    
-    
     if (notification.email === user.email) return;
 
     const icon = notification.type === "LOGOUT" ? "👋" : "🔔";
@@ -130,7 +135,7 @@ export function useChatWebSocket({
       handleUsersUpdated,
       handleMessageDeleted,
       handleMessageEdited,
-      handleUserStatusChanged
+      handleUserStatusChanged,
     );
 
     return () => disconnect();

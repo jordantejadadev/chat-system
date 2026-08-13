@@ -155,31 +155,46 @@ const ChatPage = () => {
   };
 
   return (
-    <div style={{ display: "flex" }}>
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
       <ContactsList
         users={users}
         selectedUser={selectedUser}
         setSelectedUser={setSelectedUser}
       />
 
-      <div style={{ flex: 1, padding: "0 16px" }}>
-        <header>
-          <h2>{user.username}</h2>
-          <p>{user.email}</p>
-          <button onClick={handleLogout}>Cerrar Sesión</button>
+      {/* Área principal */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Header del usuario actual */}
+        <header className="flex items-center justify-between border-b border-gray-200 bg-white px-5 py-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-800">
+              {user.username}
+            </h2>
+
+            <p className="text-xs text-gray-400">{user.email}</p>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="rounded-lg px-3 py-2 text-sm text-gray-500 transition hover:bg-red-50 hover:text-red-500"
+          >
+            Cerrar sesión
+          </button>
         </header>
 
-        <hr />
-
+        {/* Conversación */}
         {selectedUser ? (
-          <>
-            <main>
-              <ChatHeader
-                selectedUser={selectedUser}
-                search={search}
-                setSearch={setSearch}
-                typingUser={typingUser}                
-              />
+          <div className="flex min-h-0 flex-1 flex-col">
+            {/* Header del contacto */}
+            <ChatHeader
+              selectedUser={selectedUser}
+              search={search}
+              setSearch={setSearch}
+              typingUser={typingUser}
+            />
+
+            {/* Mensajes */}            
               <MessageList
                 messages={messages}
                 search={search}
@@ -190,11 +205,9 @@ const ChatPage = () => {
                 replying={replying}
                 actions={actions}
                 ui={ui}
-              />
-            </main>
+              />            
 
-            <hr />
-
+            {/* Input */}
             <MessageInput
               selectedUser={selectedUser}
               replyingTo={replyingTo}
@@ -204,9 +217,22 @@ const ChatPage = () => {
               handleSendMessage={handleSendMessage}
               typingTimeoutRef={typingTimeoutRef}
             />
-          </>
+          </div>
         ) : (
-          <p>Selecciona un contacto para empezar a chatear</p>
+          /* Estado inicial */
+          <div className="flex flex-1 items-center justify-center">
+            <div className="text-center">
+              <div className="mb-3 text-5xl">💬</div>
+
+              <h2 className="text-lg font-semibold text-gray-700">
+                Bienvenido al chat
+              </h2>
+
+              <p className="mt-1 text-sm text-gray-400">
+                Selecciona un contacto para empezar a chatear
+              </p>
+            </div>
+          </div>
         )}
       </div>
     </div>

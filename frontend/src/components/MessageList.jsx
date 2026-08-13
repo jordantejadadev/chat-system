@@ -16,10 +16,7 @@ export default function MessageList({
   return (
     <div
       ref={messagesContainerRef}
-      style={{
-        height: "500px",
-        overflow: "auto",
-      }}
+      className="min-h-0 flex-1 overflow-y-auto bg-gray-50 px-4 py-4"
     >
       {messagesToShow.map((message) => (
         <MessageItem

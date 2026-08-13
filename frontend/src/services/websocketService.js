@@ -68,8 +68,8 @@ export function connect(
         onMessageEdited(body);
       });
 
-      stompClient.subscribe("/topic/user-notifications", (message) => {
-        const body = JSON.parse(message.body);
+      stompClient.subscribe("/topic/user-notifications", (message) => {        
+        const body = JSON.parse(message.body);        
         if (onUserStatusChanged) onUserStatusChanged(body);
       });
     },
@@ -92,7 +92,7 @@ export function connect(
 
 export function disconnect() {
   console.log("Desconectando STOMP...");
-  
+
   if (stompClient) {
     stompClient.deactivate();
   }
